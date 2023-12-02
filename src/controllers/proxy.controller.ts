@@ -1,25 +1,40 @@
-import { Controller, Post, Req, Get } from "@nestjs/common";
+import { All, Controller, Req, Res } from "@nestjs/common";
+import { Request, Response } from "express";
+import { ProxyService } from "../service/proxy.service";
+import { Endpoint } from "../service/types";
 import { HttpService } from "@nestjs/axios";
+import { Method } from "axios";
 
 @Controller("proxy")
 export class ProxyController {
-  constructor(private readonly httpService: HttpService) {}
-
-  @Get()
-  healthCheck(): boolean {
-    return true;
+  constructor(
+    private readonly proxyService: ProxyService,
+    private readonly httpService: HttpService
+  ) {
+    this.proxyService = proxyService;
+    this.httpService = httpService;
   }
 
-  @Post("riskFailService")
-  async forwardRiskFailure(): Promise<any> {}
+  @All("*")
+  async proxyRequestHandler(
+    @Req() request: Request,
+    @Res() response: Response
+  ) {
+    const endpoint: Endpoint = {
+      path: request.path,
+      method: request.method as Method,
+    };
 
-  @Post("totalAttendanceService")
-  async forwaredTotalAttendance(): Promise<any> {}
+    const service = this.proxyService.getServiceForEndpoint(endpoint);
+    const url = service + endpoint.path;
 
-  @Post("studentEngagementService")
-  forwaredStudentEngagement(@Req() failureMetrics: any): boolean {
-    const { cutOff, engagementScore } = failureMetrics;
+    const proxyResponse = this.httpService.request({
+      url,
+      headers: request.headers,
+      data: request.body,
+    });
 
-    return engagementScore < cutOff;
+    response.status(200);
+    await proxyResponse.forEach((res) => response.send(res));
   }
 }
