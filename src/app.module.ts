@@ -1,17 +1,27 @@
 import { Module } from "@nestjs/common";
 import { HttpModule } from "@nestjs/axios";
 import { ProxyController } from "./controllers/proxy.controller";
-import { AppService } from "./app.service";
+import { DiscoveryController } from "./controllers/discovery.controller";
+import { DiscoveryService } from "./service/discovery.service";
+import { ProxyService } from "./service/proxy.service";
+import { ReceiverController } from "./controllers/receiver.controller";
+
+@Module({
+  imports: [HttpModule],
+  controllers: [DiscoveryController],
+  providers: [DiscoveryService, ProxyService],
+})
+export class DiscoveryModule {}
 
 @Module({
   imports: [HttpModule],
   controllers: [ProxyController],
-  providers: [AppService],
+  providers: [DiscoveryService, ProxyService],
 })
-export class AppModule {}
+export class ProxyModule {}
 
-// {
-//   configure(consumer: MiddlewareConsumer) {
-//     consumer.apply(TestMiddleware).forRoutes("*");
-//   }
-// }
+@Module({
+  imports: [HttpModule],
+  controllers: [ReceiverController],
+})
+export class ReceiverModule {}
